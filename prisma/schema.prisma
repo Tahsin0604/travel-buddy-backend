@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String     @id @default(uuid())
+  name               String
+  email              String     @unique
+  password           String
+  status             UserStatus @default(ACTIVE)
+  role               UserRole
+  needPasswordChange Boolean    @default(true)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  profile             UserProfile?
+  trips               Trip[]
+  travelBuddyRequests TravelBuddy[]
+
+  @@index([email], name: "idx_email")
+  @@map("users")
+}
+
+model Trip {
+  id          String   @id @default(uuid())
+  userId      String
+  destination String
+  tripType    TripType
+  tripTitle   String
+  description String?
+  images      String[]
+  startDate   String
+  endDate     String
+  budget      Int
+  itinerary   Json
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id])
+  travelBuddies TravelBuddy[]
+
+  @@map("trips")
+}
+
+model TravelBuddy {
+  id            String       @id @default(uuid())
+  tripId        String
+  userId        String
+  userName      String
+  useEmail      String
+  contactNumber String
+  isDeleted     Boolean      @default(false)
+  status        TravelStatus @default(PENDING)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+  trip Trip @relation(fields: [tripId], references: [id])
+
+  @@map("travelBuddies")
+}
+
+model UserProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  bio          String?
+  dateOfBirth  String
+  profilePhoto String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("profiles")
+}
+
+enum TravelStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum TripType {
+  RELAXATION
+  LEISURE
+  EXPLORATION
+  HIKING
+  ADVENTURE
+  SEATOURISM
+  MOUNTAINTOURISM
+}
